@@ -174,7 +174,7 @@ public final class RocketMQMessageConverterSupport {
 			headers.entrySet().stream()
 					.filter(entry -> !Objects.equals(entry.getKey(), Headers.FLAG))
 					.forEach(entry -> {
-						if (!MessageConst.STRING_HASH_SET.contains(entry.getKey())) {
+						if (!MessageConst.STRING_HASH_SET.contains(entry.getKey()) && entry.getValue() != null) {
 							rocketMsg.putUserProperty(entry.getKey(),
 									String.valueOf(entry.getValue()));
 						}
