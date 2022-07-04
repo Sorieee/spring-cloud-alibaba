@@ -29,9 +29,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.support.GenericMessage;
 /**
  * @author sorie
@@ -61,14 +65,27 @@ public class RocketMQDelayConsumeApplication {
 				headers.put(MessageConst.PROPERTY_DELAY_TIME_LEVEL, 2);
 				Message<SimpleMsg> msg = new GenericMessage(new SimpleMsg("Delay RocketMQ " + i), headers);
 				streamBridge.send("producer-out-0", msg);
+				System.out.println("send Msg:" + msg.toString());
 			}
+			System.out.println();
 		};
 	}
 
 	@Bean
-	public Consumer<Message<SimpleMsg>> consumer() {
-		return msg -> {
-			log.info(Thread.currentThread().getName() + " Consumer Receive New Messages: " + msg.getPayload().getMsg());
+	public ApplicationRunner poller(PollableMessageSource destIn) {
+		return args -> {
+			while (true) {
+				try {
+					if (!destIn.poll((m) -> {
+						String newPayload = (m.getPayload()).toString();
+						System.out.println(newPayload.toString());
+					}, new ParameterizedTypeReference<SimpleMsg>() {})) {
+						Thread.sleep(1000);
+					}
+				} catch (Exception e) {
+					// handle failure
+				}
+			}
 		};
 	}
 }
